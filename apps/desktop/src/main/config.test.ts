@@ -1,4 +1,4 @@
-import { DEFAULT_AGENT_PORT } from '@atlas/agent-protocol';
+import { ATLAS_EXTENSION_ID, DEFAULT_AGENT_PORT } from '@atlas/agent-protocol';
 import { describe, expect, it } from 'vitest';
 
 import { ConfigError, loadAppConfig } from './config.js';
@@ -8,6 +8,7 @@ describe('loadAppConfig', () => {
     expect(loadAppConfig({}, { isPackaged: true })).toEqual({
       agentPort: DEFAULT_AGENT_PORT,
       logLevel: 'info',
+      allowedExtensionIds: [ATLAS_EXTENSION_ID],
       isDevelopment: false,
     });
     expect(loadAppConfig({}, { isPackaged: false }).logLevel).toBe('debug');
@@ -39,6 +40,16 @@ describe('loadAppConfig', () => {
     expect(() => loadAppConfig({ ATLAS_AGENT_PORT: port }, { isPackaged: true })).toThrow(
       ConfigError,
     );
+  });
+
+  it('configures which extensions may connect', () => {
+    const id = 'b'.repeat(32);
+    const load = (value: string) =>
+      loadAppConfig({ ATLAS_ALLOWED_EXTENSION_IDS: value }, { isPackaged: true })
+        .allowedExtensionIds;
+    expect(load(`${id}, ${ATLAS_EXTENSION_ID}`)).toEqual([id, ATLAS_EXTENSION_ID]);
+    expect(load('*')).toEqual([]);
+    expect(() => load('not-an-id')).toThrow(ConfigError);
   });
 
   it('rejects unknown log levels', () => {

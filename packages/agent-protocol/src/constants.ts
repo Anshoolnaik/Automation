@@ -5,3 +5,10 @@ export const AGENT_HOST = '127.0.0.1';
 export const DEFAULT_AGENT_PORT = 47821;
 
 export const PROTOCOL_VERSION = 1;
+
+/**
+ * ID of the Atlas Chrome extension. It is fixed by the public "key" in
+ * extension/public/manifest.json, so the unpacked extension has the same ID on every
+ * machine and the desktop agent can accept connections from it alone.
+ */
+export const ATLAS_EXTENSION_ID = 'hhkcbmdmobniaagpjgcfnihickadngij';

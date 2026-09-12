@@ -36,6 +36,7 @@ export function createAgentRuntime(options: {
 
   const server = new AgentServer({
     port: config.agentPort,
+    allowedExtensionIds: config.allowedExtensionIds,
     logger: logs.forComponent('agent-server'),
   });
   const extension = new WebSocketExtensionChannel(server, logs.forComponent('extension'));

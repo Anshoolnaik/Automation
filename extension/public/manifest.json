@@ -3,6 +3,7 @@
   "name": "Atlas Agent",
   "version": "0.1.0",
   "description": "Connects this Chrome profile to the Atlas Agent desktop app running on the same computer.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAocqlNKcvsiRxexE9Cjty+zCrNrrvXOHdbbG5+crsmS5FXldLmMXTUbrrO06Dk1LTKX4L/IEME04/zvfr24LukHg8860O8/OGjLukmk2fK6E0ouPt45lPOveAE+SuaUShmyudlUFnV2wkHhdy4dLF27wYf8n9OGlOTON2jNBPPxzStx36C9564n2FY7N4hk11aRZCJ39PRSsmOP9M3fpOVyDPE81Lzj9ZUkXC6Cpd5lhrzYCW9qMYCGr0Ex31yyNEJSG0vkGkSFLnOncnkyjEJ2p/8PxtuG2B1i5n8a69IHtXnGKZ8Oar4a2pGtXgt8mp9ZSCQ5/HnMaUwzM4x95NCwIDAQAB",
   "minimum_chrome_version": "116",
   "permissions": ["tabs", "alarms"],
   "background": {

@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import type { ExtensionToDesktopMessage } from '@atlas/agent-protocol';
+import { ATLAS_EXTENSION_ID, type ExtensionToDesktopMessage } from '@atlas/agent-protocol';
 import { AgentServer } from '@atlas/agent-server';
 import { createNoopLogger } from '@atlas/logger';
 import type { BrowserContext } from 'playwright-core';
@@ -25,7 +25,12 @@ describe.skipIf(shouldSkipBrowserTests())('Atlas extension <-> agent server (rea
   const messages: ExtensionToDesktopMessage[] = [];
 
   const startServer = async () => {
-    server = new AgentServer({ port, logger: createNoopLogger() });
+    // Same allowlist as the desktop app's default configuration.
+    server = new AgentServer({
+      port,
+      logger: createNoopLogger(),
+      allowedExtensionIds: [ATLAS_EXTENSION_ID],
+    });
     server.onMessage((message) => messages.push(message));
     await server.start();
     return server;
@@ -53,6 +58,7 @@ describe.skipIf(shouldSkipBrowserTests())('Atlas extension <-> agent server (rea
 
   it('connects automatically once the desktop agent becomes available', async () => {
     // The extension started before the server existed and has been retrying.
+    expect(extensionId).toBe(ATLAS_EXTENSION_ID);
     const agent = await startServer();
     await expect.poll(() => agent.connection.state, { timeout: 30_000 }).toBe('CONNECTED');
     expect(agent.connection.extensionVersion).toBe('0.1.0');
