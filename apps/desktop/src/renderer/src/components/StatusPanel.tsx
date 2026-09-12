@@ -7,16 +7,17 @@ import {
 } from '../lib/status-labels';
 
 interface StatusItemProps {
+  id: string;
   title: string;
   view: StatusView;
   detail?: string | undefined;
 }
 
-function StatusItem({ title, view, detail }: StatusItemProps) {
+function StatusItem({ id, title, view, detail }: StatusItemProps) {
   return (
-    <div className="status-item">
+    <div className="status-item" data-testid={`status-${id}`}>
       <div className="status-title">{title}</div>
-      <div className={`status-value tone-${view.tone}`}>
+      <div className={`status-value tone-${view.tone}`} data-testid={`status-${id}-value`}>
         <span className="status-dot" aria-hidden="true" />
         {view.label}
       </div>
@@ -34,16 +35,19 @@ export function StatusPanel({ status }: { status: AgentStatusSnapshot }) {
   return (
     <section className="panel status-panel" aria-label="Status">
       <StatusItem
+        id="agent"
         title="Agent Status"
         view={agentStatusView(status.agent)}
         detail={status.currentTask ? `Task: ${status.currentTask.command}` : undefined}
       />
       <StatusItem
+        id="browser"
         title="Browser Status"
         view={browserStatusView(status.browser)}
         detail={status.browserMessage}
       />
       <StatusItem
+        id="extension"
         title="Extension Status"
         view={extensionStatusView(status.extension.state)}
         detail={page ? page.title || page.url : undefined}

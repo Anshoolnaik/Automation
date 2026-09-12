@@ -10,13 +10,12 @@ import { app, BrowserWindow, ipcMain, session } from 'electron';
 import path from 'node:path';
 
 import { IpcEvent } from '../shared/ipc-channels.js';
-import type { AgentFacade } from './agent-facade.js';
+import { createAgentRuntime } from './agent-runtime.js';
 import { ensureAppDirectories, resolveAppPaths, type AppPaths } from './app-paths.js';
 import { loadAppConfig, type AppConfig } from './config.js';
 import { createIpcHandlers } from './ipc/ipc-handlers.js';
 import { registerIpcHandlers } from './ipc/register-ipc.js';
 import { LogBroadcaster } from './logging/log-broadcaster.js';
-import { createShellAgentFacade } from './shell-agent-facade.js';
 import { runShutdownSteps, type ShutdownStep } from './shutdown/run-shutdown.js';
 import { createMainWindow } from './window/create-main-window.js';
 import { hardenSession } from './window/harden-session.js';
@@ -46,7 +45,8 @@ export async function bootstrapAtlas(): Promise<AtlasApplication> {
     },
   });
 
-  const agent: AgentFacade = createShellAgentFacade();
+  const runtime = createAgentRuntime({ config, paths, logs: logManager });
+  const agent = runtime.facade;
 
   const rendererLocation = resolveRendererLocation({
     isPackaged: app.isPackaged,
@@ -86,6 +86,7 @@ export async function bootstrapAtlas(): Promise<AtlasApplication> {
         stopStatusBroadcast();
       },
     },
+    ...runtime.shutdownSteps,
     { name: 'unregister-ipc', run: unregisterIpc },
     {
       name: 'flush-logs',

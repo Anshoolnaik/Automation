@@ -8,6 +8,18 @@ importers:
 
   .:
     devDependencies:
+      '@atlas/agent-core':
+        specifier: workspace:*
+        version: link:packages/agent-core
+      '@atlas/agent-protocol':
+        specifier: workspace:*
+        version: link:packages/agent-protocol
+      '@atlas/browser-core':
+        specifier: workspace:*
+        version: link:packages/browser-core
+      '@atlas/logger':
+        specifier: workspace:*
+        version: link:packages/logger
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.10.0)
@@ -26,6 +38,9 @@ importers:
       globals:
         specifier: ^17.12.0
         version: 17.12.0
+      playwright-core:
+        specifier: ^1.63.0
+        version: 1.63.0
       prettier:
         specifier: ^3.9.6
         version: 3.9.6
@@ -41,12 +56,21 @@ importers:
 
   apps/desktop:
     dependencies:
+      '@atlas/agent-core':
+        specifier: workspace:*
+        version: link:../../packages/agent-core
       '@atlas/agent-protocol':
         specifier: workspace:*
         version: link:../../packages/agent-protocol
+      '@atlas/browser-core':
+        specifier: workspace:*
+        version: link:../../packages/browser-core
       '@atlas/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      playwright-core:
+        specifier: ^1.63.0
+        version: 1.63.0
       zod:
         specifier: ^4.6.2
         version: 4.6.2
@@ -76,11 +100,32 @@ importers:
         specifier: ^7.3.6
         version: 7.3.6(@types/node@24.13.4)(lightningcss@1.33.0)
 
+  packages/agent-core:
+    dependencies:
+      '@atlas/agent-protocol':
+        specifier: workspace:*
+        version: link:../agent-protocol
+      '@atlas/browser-core':
+        specifier: workspace:*
+        version: link:../browser-core
+      '@atlas/logger':
+        specifier: workspace:*
+        version: link:../logger
+
   packages/agent-protocol:
     dependencies:
       zod:
         specifier: ^4.6.2
         version: 4.6.2
+
+  packages/browser-core:
+    dependencies:
+      '@atlas/logger':
+        specifier: workspace:*
+        version: link:../logger
+      playwright-core:
+        specifier: ^1.63.0
+        version: 1.63.0
 
   packages/logger: {}
 
@@ -1405,6 +1450,11 @@ packages:
   picomatch@4.0.7:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
+
+  playwright-core@1.63.0:
+    resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   postcss@8.5.28:
     resolution: {integrity: sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==}
@@ -2829,6 +2879,8 @@ snapshots:
   picocolors@1.1.1: {}
 
   picomatch@4.0.7: {}
+
+  playwright-core@1.63.0: {}
 
   postcss@8.5.28:
     dependencies:

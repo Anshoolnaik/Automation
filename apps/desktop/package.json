@@ -12,8 +12,11 @@
     "typecheck": "tsc -p tsconfig.node.json && tsc -p tsconfig.web.json"
   },
   "dependencies": {
+    "@atlas/agent-core": "workspace:*",
     "@atlas/agent-protocol": "workspace:*",
+    "@atlas/browser-core": "workspace:*",
     "@atlas/logger": "workspace:*",
+    "playwright-core": "^1.63.0",
     "zod": "^4.6.2"
   },
   "devDependencies": {
