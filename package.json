@@ -23,7 +23,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc -p tsconfig.json && pnpm -r typecheck"
+    "typecheck": "tsc -p tsconfig.json && pnpm -r typecheck",
+    "db:inspect": "node scripts/inspect-db.mjs"
   },
   "devDependencies": {
     "@atlas/agent-core": "workspace:*",

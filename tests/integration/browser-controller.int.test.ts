@@ -118,6 +118,17 @@ describe.skipIf(shouldSkipBrowserTests())('PlaywrightBrowserController (real Chr
     expect(await controller.getPageTitle()).toBe('Recall: still-here');
   });
 
+  it('explains when the profile is already open in another Chrome', async (context) => {
+    await launchOrSkip(context);
+    const second = createController();
+    await expect(second.launch()).rejects.toMatchObject({
+      code: 'PROFILE_IN_USE',
+      message: expect.stringContaining('already in use') as string,
+    });
+    expect(second.isRunning).toBe(false);
+    expect(controller.isRunning).toBe(true);
+  });
+
   it('notifies listeners when Chrome is closed outside Atlas', async (context) => {
     await launchOrSkip(context);
     let disconnected = false;

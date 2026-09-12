@@ -47,5 +47,11 @@ export default defineConfig(
     files: ['packages/logger/src/transports/console-transport.ts', '**/*.test.ts', 'tests/**/*.ts'],
     rules: { 'no-console': 'off' },
   },
+  {
+    // Plain Node scripts are not part of a TypeScript project.
+    files: ['scripts/**/*.mjs'],
+    extends: [tseslint.configs.disableTypeChecked],
+    rules: { 'no-console': 'off' },
+  },
   prettier,
 );
