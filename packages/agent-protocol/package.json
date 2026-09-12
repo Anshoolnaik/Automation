@@ -1,0 +1,16 @@
+{
+  "name": "@atlas/agent-protocol",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared Atlas contracts: WebSocket messages between desktop and extension, and state vocabulary",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^4.6.2"
+  }
+}
