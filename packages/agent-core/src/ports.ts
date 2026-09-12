@@ -1,3 +1,7 @@
+import type { ExtensionState, TaskStatus } from '@atlas/agent-protocol';
+
+import type { PageInfo } from './agent-status.js';
+
 /**
  * Ports: interfaces agent-core needs from the outside world. Implementations
  * (SQLite, WebSocket…) are injected by the application's composition root.
@@ -29,3 +33,24 @@ export interface BrowserEventRecorder {
 export const noopBrowserEventRecorder: BrowserEventRecorder = {
   record: () => undefined,
 };
+
+export interface ExtensionConnection {
+  state: ExtensionState;
+  extensionVersion?: string;
+  connectedAt?: string;
+}
+
+export interface TaskStatusNotification {
+  taskId: string;
+  status: TaskStatus;
+  command: string;
+  message?: string;
+}
+
+/** The link to the Atlas Chrome extension (a localhost WebSocket in production). */
+export interface ExtensionChannel {
+  readonly connection: ExtensionConnection;
+  onConnectionChange(listener: (connection: ExtensionConnection) => void): () => void;
+  onActivePageChanged(listener: (page: PageInfo) => void): () => void;
+  notifyTaskStatus(update: TaskStatusNotification): void;
+}

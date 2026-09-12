@@ -1,5 +1,6 @@
+// Editor/ESLint umbrella config. `pnpm typecheck` uses the stricter split
+// tsconfig.node.json (main, preload) and tsconfig.web.json (renderer).
 {
-  "//": "Editor/ESLint umbrella config. `pnpm typecheck` uses the stricter split tsconfig.node.json and tsconfig.web.json.",
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],

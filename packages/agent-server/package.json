@@ -1,0 +1,21 @@
+{
+  "name": "@atlas/agent-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Localhost-only WebSocket server that talks to the Atlas Chrome extension",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@atlas/agent-protocol": "workspace:*",
+    "@atlas/logger": "workspace:*",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1"
+  }
+}

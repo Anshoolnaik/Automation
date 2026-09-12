@@ -47,6 +47,7 @@ export async function bootstrapAtlas(): Promise<AtlasApplication> {
 
   const runtime = createAgentRuntime({ config, paths, logs: logManager });
   const agent = runtime.facade;
+  await runtime.start();
 
   const rendererLocation = resolveRendererLocation({
     isPackaged: app.isPackaged,

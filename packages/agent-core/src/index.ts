@@ -7,6 +7,9 @@ export {
   type BrowserEventInput,
   type BrowserEventRecorder,
   type BrowserEventType,
+  type ExtensionChannel,
+  type ExtensionConnection,
+  type TaskStatusNotification,
 } from './ports.js';
 export {
   InvalidStateTransitionError,

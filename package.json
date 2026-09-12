@@ -27,10 +27,12 @@
   "devDependencies": {
     "@atlas/agent-core": "workspace:*",
     "@atlas/agent-protocol": "workspace:*",
+    "@atlas/agent-server": "workspace:*",
     "@atlas/browser-core": "workspace:*",
     "@atlas/logger": "workspace:*",
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.20.2",
+    "@types/ws": "^8.18.1",
     "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
@@ -39,6 +41,7 @@
     "prettier": "^3.9.6",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.70.0",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "ws": "^8.21.3"
   }
 }

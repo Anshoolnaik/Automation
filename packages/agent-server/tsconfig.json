@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    // Only globals shared by Node and extension service workers are used (e.g. crypto.randomUUID).
     "types": ["node"]
   },
   "include": ["src"]
