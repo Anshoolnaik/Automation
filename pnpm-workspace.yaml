@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+  - extension
+
+# Only these dependencies may run install scripts (pnpm blocks all others by default).
+onlyBuiltDependencies:
+  - electron
+  - esbuild

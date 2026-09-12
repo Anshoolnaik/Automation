@@ -1,0 +1,14 @@
+node_modules/
+dist/
+out/
+coverage/
+*.log
+*.tsbuildinfo
+.vite/
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+# Local test artifacts
+.tmp/
