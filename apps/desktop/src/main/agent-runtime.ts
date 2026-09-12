@@ -1,4 +1,4 @@
-import { AgentService, BrowserSession, noopBrowserEventRecorder } from '@atlas/agent-core';
+import { AgentService, BrowserSession } from '@atlas/agent-core';
 import { AgentServer } from '@atlas/agent-server';
 import { PlaywrightBrowserController } from '@atlas/browser-core/playwright';
 import type { LogManager } from '@atlas/logger';
@@ -7,6 +7,8 @@ import { createAgentFacade, type AgentFacade } from './agent-facade.js';
 import type { AppPaths } from './app-paths.js';
 import type { AppConfig } from './config.js';
 import { WebSocketExtensionChannel } from './extension/websocket-extension-channel.js';
+import { createDatabaseEventRecorder } from './persistence/database-event-recorder.js';
+import { openDatabaseForSession } from './persistence/open-database.js';
 import type { ShutdownStep } from './shutdown/run-shutdown.js';
 
 export interface AgentRuntime {
@@ -17,14 +19,19 @@ export interface AgentRuntime {
   shutdownSteps: ShutdownStep[];
 }
 
-/** Builds the agent's services from configuration. */
+/** Builds the agent's services from configuration. Throws if the database cannot be opened. */
 export function createAgentRuntime(options: {
   config: AppConfig;
   paths: AppPaths;
   logs: LogManager;
 }): AgentRuntime {
   const { config, paths, logs } = options;
-  const events = noopBrowserEventRecorder;
+
+  const { database, agentRunId } = openDatabaseForSession(
+    paths.databaseFile,
+    logs.forComponent('database'),
+  );
+  const events = createDatabaseEventRecorder(database.browserEvents, logs.forComponent('database'));
 
   const server = new AgentServer({
     port: config.agentPort,
@@ -75,6 +82,13 @@ export function createAgentRuntime(options: {
           service.dispose();
         },
         timeoutMs: 15_000,
+      },
+      {
+        name: 'flush-and-close-database',
+        run: () => {
+          database.agentRuns.stop(agentRunId);
+          database.close();
+        },
       },
     ],
   };

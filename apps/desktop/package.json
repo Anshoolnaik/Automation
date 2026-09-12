@@ -16,6 +16,7 @@
     "@atlas/agent-protocol": "workspace:*",
     "@atlas/agent-server": "workspace:*",
     "@atlas/browser-core": "workspace:*",
+    "@atlas/database": "workspace:*",
     "@atlas/logger": "workspace:*",
     "playwright-core": "^1.63.0",
     "ws": "^8.21.3",

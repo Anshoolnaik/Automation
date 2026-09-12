@@ -1,0 +1,16 @@
+{
+  "name": "@atlas/database",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SQLite persistence (node:sqlite) with migrations and repositories",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@atlas/agent-protocol": "workspace:*"
+  }
+}

@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { openAtlasDatabase } from '@atlas/database';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { launchDesktopApp, isDesktopBuilt, type LaunchedDesktop } from './support/desktop-app.js';
@@ -71,6 +72,16 @@ describe.skipIf(shouldSkipBrowserTests() || !isDesktopBuilt())(
       expect(logFile).toContain('"message":"Agent stopped"');
       // Profile data is never deleted on shutdown.
       expect(existsSync(profileDir)).toBe(true);
+
+      // SQLite: the session was recorded and closed cleanly, with browser lifecycle events.
+      const database = openAtlasDatabase({ filePath: path.join(userData.dir, 'data', 'atlas.db') });
+      try {
+        expect(database.agentRuns.abortUnfinished()).toBe(0);
+        const eventTypes = database.browserEvents.listRecent(50).map((event) => event.eventType);
+        expect(eventTypes).toEqual(expect.arrayContaining(['BROWSER_LAUNCHED', 'BROWSER_STOPPED']));
+      } finally {
+        database.close();
+      }
     });
   },
 );

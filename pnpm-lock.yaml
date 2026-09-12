@@ -20,6 +20,9 @@ importers:
       '@atlas/browser-core':
         specifier: workspace:*
         version: link:packages/browser-core
+      '@atlas/database':
+        specifier: workspace:*
+        version: link:packages/database
       '@atlas/logger':
         specifier: workspace:*
         version: link:packages/logger
@@ -80,6 +83,9 @@ importers:
       '@atlas/browser-core':
         specifier: workspace:*
         version: link:../../packages/browser-core
+      '@atlas/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@atlas/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -173,6 +179,12 @@ importers:
       playwright-core:
         specifier: ^1.63.0
         version: 1.63.0
+
+  packages/database:
+    dependencies:
+      '@atlas/agent-protocol':
+        specifier: workspace:*
+        version: link:../agent-protocol
 
   packages/logger: {}
 
