@@ -39,6 +39,8 @@ export default defineConfig(
   {
     files: ['extension/src/**/*.ts'],
     languageOptions: { globals: { ...globals.browser, ...globals.webextensions } },
+    // The service worker has no logger; the console is its only diagnostics sink.
+    rules: { 'no-console': ['error', { allow: ['debug', 'warn', 'error'] }] },
   },
   {
     // Console output is the purpose of the console transport; tests may print diagnostics.

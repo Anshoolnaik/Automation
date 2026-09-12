@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Atlas Agent</title>
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <h1>Atlas Agent</h1>
+
+      <section class="row">
+        <div class="label">Desktop Agent</div>
+        <div class="value">
+          <span id="connection-dot" class="dot"></span>
+          <span id="connection">Checking…</span>
+        </div>
+        <div id="agent-url" class="hint"></div>
+      </section>
+
+      <section class="row">
+        <div class="label">Current Page</div>
+        <div id="page-title" class="value">—</div>
+      </section>
+
+      <section class="row">
+        <div class="label">URL</div>
+        <div id="page-url" class="value url">—</div>
+      </section>
+
+      <section id="task-section" class="row" hidden>
+        <div class="label">Last Task</div>
+        <div id="task" class="value"></div>
+      </section>
+    </main>
+    <script type="module" src="./popup.ts"></script>
+  </body>
+</html>

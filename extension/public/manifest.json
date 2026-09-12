@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Atlas Agent",
+  "version": "0.1.0",
+  "description": "Connects this Chrome profile to the Atlas Agent desktop app running on the same computer.",
+  "minimum_chrome_version": "116",
+  "permissions": ["tabs", "alarms"],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Atlas Agent",
+    "default_popup": "src/popup/popup.html"
+  }
+}

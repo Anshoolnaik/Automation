@@ -1,0 +1,19 @@
+{
+  "name": "@atlas/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Atlas Agent Chrome extension (Manifest V3)",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "watch": "vite build --watch",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@atlas/agent-protocol": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.2.9",
+    "vite": "^7.3.6"
+  }
+}
