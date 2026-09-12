@@ -1,34 +1,17 @@
-import { createNoopLogger } from '@atlas/logger';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
-import { AgentService } from './agent-service.js';
-import type { AgentStatus } from './agent-status.js';
-import { BrowserSession } from './browser/browser-session.js';
-import type { BrowserEventInput } from './ports.js';
-import { FakeBrowserController } from './testing/fake-browser-controller.js';
-import { FakeExtensionChannel } from './testing/fake-extension-channel.js';
-
-function setup() {
-  const controller = new FakeBrowserController();
-  const extension = new FakeExtensionChannel();
-  const events: BrowserEventInput[] = [];
-  const recorder = { record: (event: BrowserEventInput) => events.push(event) };
-  const browser = new BrowserSession(controller, createNoopLogger(), recorder);
-  const service = new AgentService({
-    browser,
-    extension,
-    events: recorder,
-    logger: createNoopLogger(),
-  });
-  const statuses: AgentStatus[] = [];
-  service.onStatusChanged((status) => statuses.push(status));
-  return { controller, extension, events, service, statuses };
-}
+import { createTestAgent } from './testing/create-test-agent.js';
 
 describe('AgentService', () => {
+  let agent: ReturnType<typeof createTestAgent>;
+
+  afterEach(() => {
+    agent?.database.close();
+  });
+
   it('starts idle with the browser stopped and the extension disconnected', () => {
-    const { service } = setup();
-    expect(service.getStatus()).toEqual({
+    agent = createTestAgent();
+    expect(agent.service.getStatus()).toEqual({
       agent: 'IDLE',
       browser: 'STOPPED',
       extension: { state: 'DISCONNECTED' },
@@ -36,17 +19,51 @@ describe('AgentService', () => {
   });
 
   it('emits status changes for browser launch and stop', async () => {
-    const { service, statuses } = setup();
-    await service.launchBrowser();
-    await service.stopBrowser();
-    expect(statuses.map((s) => s.browser)).toEqual(['STARTING', 'RUNNING', 'STOPPED']);
+    agent = createTestAgent();
+    await agent.service.launchBrowser();
+    await agent.service.stopBrowser();
+    expect(agent.statuses.map((s) => s.browser)).toEqual(['STARTING', 'RUNNING', 'STOPPED']);
+  });
+
+  it('reflects task execution in the agent state and notifies the extension', async () => {
+    agent = createTestAgent();
+    await agent.service.launchBrowser();
+
+    await agent.service.runTask('Open wikipedia.org');
+    const running = agent.statuses.find((s) => s.agent === 'RUNNING');
+    expect(running?.currentTask).toMatchObject({
+      command: 'Open wikipedia.org',
+      status: 'RUNNING',
+    });
+    expect(agent.service.getStatus()).toMatchObject({ agent: 'IDLE' });
+    expect(agent.service.getStatus().currentTask).toBeUndefined();
+
+    const failed = await agent.service.runTask('Do something impossible');
+    expect(failed.status).toBe('FAILED');
+    expect(agent.service.getStatus().agent).toBe('ERROR');
+
+    await agent.service.runTask('Open wikipedia.org');
+    expect(agent.service.getStatus().agent).toBe('IDLE');
+
+    expect(agent.extension.notifications.map((n) => n.status)).toEqual([
+      'PENDING',
+      'RUNNING',
+      'COMPLETED',
+      'PENDING',
+      'RUNNING',
+      'FAILED',
+      'PENDING',
+      'RUNNING',
+      'COMPLETED',
+    ]);
   });
 
   it('tracks the extension connection, active page and records events', () => {
-    const { service, extension, events } = setup();
+    agent = createTestAgent();
+    const { extension, service, database } = agent;
     extension.connect('1.2.3');
     extension.changePage({ title: 'Wikipedia', url: 'https://www.wikipedia.org/' });
-    extension.changePage({ title: 'Wikipedia', url: 'https://www.wikipedia.org/' }); // duplicate: ignored
+    extension.changePage({ title: 'Wikipedia', url: 'https://www.wikipedia.org/' }); // duplicate
 
     expect(service.getStatus().extension).toEqual({
       state: 'CONNECTED',
@@ -57,21 +74,26 @@ describe('AgentService', () => {
 
     extension.disconnect();
     expect(service.getStatus().extension).toEqual({ state: 'DISCONNECTED' });
-    expect(events.map((e) => e.type)).toEqual([
-      'EXTENSION_CONNECTED',
-      'PAGE_CHANGED',
-      'EXTENSION_DISCONNECTED',
-    ]);
+    expect(
+      database.browserEvents
+        .listRecent(10)
+        .map((e) => e.eventType)
+        .reverse(),
+    ).toEqual(['EXTENSION_CONNECTED', 'PAGE_CHANGED', 'EXTENSION_DISCONNECTED']);
   });
 
   it('shuts down in steps: refuses new work, then the browser can still be stopped', async () => {
-    const { service, controller } = setup();
+    agent = createTestAgent();
+    const { service, controller } = agent;
     await service.launchBrowser();
     await service.stopAcceptingTasks();
     await service.stopAcceptingTasks(); // idempotent
 
     expect(service.getStatus()).toMatchObject({ agent: 'STOPPED', browser: 'RUNNING' });
     expect(() => service.launchBrowser()).toThrow(
+      expect.objectContaining({ code: 'SHUTTING_DOWN' }) as Error,
+    );
+    expect(() => service.runTask('Open wikipedia.org')).toThrow(
       expect.objectContaining({ code: 'SHUTTING_DOWN' }) as Error,
     );
 

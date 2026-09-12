@@ -29,6 +29,7 @@
     "@atlas/agent-protocol": "workspace:*",
     "@atlas/agent-server": "workspace:*",
     "@atlas/browser-core": "workspace:*",
+    "@atlas/command-parser": "workspace:*",
     "@atlas/database": "workspace:*",
     "@atlas/logger": "workspace:*",
     "@eslint/js": "^10.0.1",

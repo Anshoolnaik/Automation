@@ -1,4 +1,4 @@
-import type { AgentService, AgentStatus } from '@atlas/agent-core';
+import type { AgentService, AgentStatus, TaskOutcome } from '@atlas/agent-core';
 
 import type { AgentStatusSnapshot, TaskRunResultDto, Unsubscribe } from '../shared/ipc-types.js';
 
@@ -22,7 +22,7 @@ export function createAgentFacade(service: AgentService): AgentFacade {
       service.onStatusChanged((status) => listener(toSnapshot(status))),
     launchBrowser: () => service.launchBrowser(),
     stopBrowser: () => service.stopBrowser(),
-    runTask: () => Promise.reject(new Error('Task execution is not available yet')),
+    runTask: async (command) => toTaskResult(await service.runTask(command)),
   };
 }
 
@@ -35,4 +35,12 @@ export function toSnapshot(status: AgentStatus): AgentStatusSnapshot {
   if (status.browserMessage !== undefined) snapshot.browserMessage = status.browserMessage;
   if (status.currentTask) snapshot.currentTask = { ...status.currentTask };
   return snapshot;
+}
+
+export function toTaskResult(outcome: TaskOutcome): TaskRunResultDto {
+  const result: TaskRunResultDto = { taskId: outcome.taskId, status: outcome.status };
+  if (outcome.errorMessage !== undefined) result.errorMessage = outcome.errorMessage;
+  if (outcome.finalUrl !== undefined) result.finalUrl = outcome.finalUrl;
+  if (outcome.finalTitle !== undefined) result.finalTitle = outcome.finalTitle;
+  return result;
 }

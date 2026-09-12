@@ -1,13 +1,16 @@
+import { TERMINAL_TASK_STATUSES } from '@atlas/agent-protocol';
 import type { Logger } from '@atlas/logger';
 
-import type { AgentStatus, ExtensionStatus, PageInfo } from './agent-status.js';
+import type { AgentStatus, CurrentTask, ExtensionStatus, PageInfo } from './agent-status.js';
 import type { BrowserSession } from './browser/browser-session.js';
 import { AgentError } from './errors.js';
 import type { BrowserEventRecorder, ExtensionChannel, ExtensionConnection } from './ports.js';
 import { createAgentStateMachine, createExtensionStateMachine } from './state/transitions.js';
+import type { TaskOutcome, TaskRunner } from './tasks/task-runner.js';
 
 export interface AgentServiceDependencies {
   browser: BrowserSession;
+  tasks: TaskRunner;
   extension: ExtensionChannel;
   events: BrowserEventRecorder;
   logger: Logger;
@@ -31,6 +34,7 @@ export class AgentService {
       this.agentState.onChange(() => this.emit()),
       deps.extension.onConnectionChange((connection) => this.handleExtensionConnection(connection)),
       deps.extension.onActivePageChanged((page) => this.handleActivePage(page)),
+      deps.tasks.onTaskUpdate((task) => this.handleTaskUpdate(task)),
     );
     this.handleExtensionConnection(deps.extension.connection);
   }
@@ -43,6 +47,8 @@ export class AgentService {
       extension: { state: this.extensionState.state, ...this.extensionDetails },
     };
     if (browser.message !== undefined) status.browserMessage = browser.message;
+    const task = this.deps.tasks.currentTask;
+    if (task && !TERMINAL_TASK_STATUSES.has(task.status)) status.currentTask = task;
     return status;
   }
 
@@ -62,13 +68,19 @@ export class AgentService {
     return this.deps.browser.stop();
   }
 
-  /** First shutdown step: refuse new work. Idempotent. */
-  stopAcceptingTasks(): Promise<void> {
-    if (!this.accepting) return Promise.resolve();
+  /** Runs a command. Resolves with the outcome (including FAILED); rejects only if the task could not be started. */
+  runTask(command: string): Promise<TaskOutcome> {
+    this.assertAccepting();
+    return this.deps.tasks.run(command);
+  }
+
+  /** First shutdown step: refuse new work and cancel the running task. Idempotent. */
+  async stopAcceptingTasks(): Promise<void> {
+    if (!this.accepting) return;
     this.accepting = false;
     this.deps.logger.info('Agent is no longer accepting tasks');
     if (this.agentState.canTransition('STOPPED')) this.agentState.transition('STOPPED');
-    return Promise.resolve();
+    await this.deps.tasks.stopAcceptingTasks();
   }
 
   /** Final shutdown step: detach listeners. Call after the browser has been stopped. */
@@ -76,6 +88,25 @@ export class AgentService {
     for (const unsubscribe of this.subscriptions.splice(0)) unsubscribe();
     this.deps.browser.dispose();
     this.listeners.clear();
+  }
+
+  private handleTaskUpdate(task: CurrentTask): void {
+    if (task.status === 'RUNNING' && this.agentState.canTransition('RUNNING')) {
+      this.agentState.transition('RUNNING');
+    } else if (task.status === 'FAILED' && this.agentState.canTransition('ERROR')) {
+      this.agentState.transition('ERROR');
+    } else if (
+      (task.status === 'COMPLETED' || task.status === 'CANCELLED') &&
+      this.agentState.canTransition('IDLE')
+    ) {
+      this.agentState.transition('IDLE');
+    }
+    this.deps.extension.notifyTaskStatus({
+      taskId: task.id,
+      status: task.status,
+      command: task.command,
+    });
+    this.emit();
   }
 
   private handleExtensionConnection(connection: ExtensionConnection): void {

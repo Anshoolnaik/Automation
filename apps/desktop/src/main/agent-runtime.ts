@@ -1,6 +1,7 @@
-import { AgentService, BrowserSession } from '@atlas/agent-core';
+import { AgentService, BrowserSession, TaskRunner } from '@atlas/agent-core';
 import { AgentServer } from '@atlas/agent-server';
 import { PlaywrightBrowserController } from '@atlas/browser-core/playwright';
+import { createPhaseOneCommandParser } from '@atlas/command-parser';
 import type { LogManager } from '@atlas/logger';
 
 import { createAgentFacade, type AgentFacade } from './agent-facade.js';
@@ -45,8 +46,18 @@ export function createAgentRuntime(options: {
     logger: logs.forComponent('browser'),
   });
   const browser = new BrowserSession(controller, logs.forComponent('browser-session'), events);
+  const tasks = new TaskRunner({
+    tasks: database.tasks,
+    checkpoints: database.checkpoints,
+    events,
+    parser: createPhaseOneCommandParser(),
+    getBrowser: () => browser.requireRunningController(),
+    logger: logs.forComponent('task'),
+    agentRunId,
+  });
   const service = new AgentService({
     browser,
+    tasks,
     extension,
     events,
     logger: logs.forComponent('agent'),

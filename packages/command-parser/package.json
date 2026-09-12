@@ -1,0 +1,16 @@
+{
+  "name": "@atlas/command-parser",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PHASE-1 deterministic command handling (not the future AI planner)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@atlas/browser-core": "workspace:*"
+  }
+}

@@ -13,6 +13,10 @@
   "dependencies": {
     "@atlas/agent-protocol": "workspace:*",
     "@atlas/browser-core": "workspace:*",
+    "@atlas/command-parser": "workspace:*",
     "@atlas/logger": "workspace:*"
+  },
+  "devDependencies": {
+    "@atlas/database": "workspace:*"
   }
 }

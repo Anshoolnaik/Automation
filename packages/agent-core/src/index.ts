@@ -2,6 +2,8 @@ export { AgentService, type AgentServiceDependencies } from './agent-service.js'
 export type { AgentStatus, CurrentTask, ExtensionStatus, PageInfo } from './agent-status.js';
 export { BrowserSession, type BrowserSessionStatus } from './browser/browser-session.js';
 export { AgentError, type AgentErrorCode } from './errors.js';
+export type { CheckpointStore, TaskStore } from './tasks/task-ports.js';
+export { TaskRunner, type TaskOutcome, type TaskRunnerDependencies } from './tasks/task-runner.js';
 export {
   noopBrowserEventRecorder,
   type BrowserEventInput,
