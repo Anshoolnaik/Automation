@@ -3,6 +3,15 @@ import path from 'node:path';
 
 import { bootstrapAtlas, type AtlasApplication } from './bootstrap.js';
 
+// With ELECTRON_RUN_AS_NODE set (some editors export it), Electron behaves like plain Node
+// and the `electron` module has no `app`. Fail with an actionable message instead of a TypeError.
+if (typeof app === 'undefined') {
+  process.stderr.write(
+    'Atlas Agent must run inside Electron. Unset the ELECTRON_RUN_AS_NODE environment variable and try again.\n',
+  );
+  process.exit(1);
+}
+
 // Optional isolated data root (automated tests, portable setups). Must be set before `ready`.
 const userDataOverride = process.env.ATLAS_USER_DATA_DIR?.trim();
 if (userDataOverride) {

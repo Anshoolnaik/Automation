@@ -50,7 +50,11 @@ export function StatusPanel({ status }: { status: AgentStatusSnapshot }) {
         id="extension"
         title="Extension Status"
         view={extensionStatusView(status.extension.state)}
-        detail={page ? page.title || page.url : undefined}
+        detail={
+          status.extension.state === 'CONNECTED'
+            ? page && (page.title || page.url)
+            : 'Load extension/dist in the Agent Browser (see README)'
+        }
       />
     </section>
   );

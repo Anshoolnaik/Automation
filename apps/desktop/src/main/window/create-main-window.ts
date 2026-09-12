@@ -50,6 +50,14 @@ export function createMainWindow(options: MainWindowOptions): BrowserWindow {
     }
   });
   webContents.on('will-attach-webview', (event) => event.preventDefault());
+  // Surface renderer problems (CSP violations, React errors) in the Atlas log file.
+  webContents.on('console-message', (event) => {
+    if (event.level === 'error' || event.level === 'warning') {
+      logger.warn(`Renderer ${event.level}: ${event.message.slice(0, 300)}`, {
+        metadata: { source: event.sourceId, line: event.lineNumber },
+      });
+    }
+  });
   webContents.on('render-process-gone', (_event, details) => {
     logger.error('Renderer process exited unexpectedly', { metadata: { reason: details.reason } });
   });
