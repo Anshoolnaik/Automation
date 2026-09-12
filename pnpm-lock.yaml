@@ -39,6 +39,8 @@ importers:
         specifier: ^4.1.11
         version: 4.1.11(@types/node@22.20.2)(vite@8.3.0(@types/node@22.20.2))
 
+  packages/logger: {}
+
 packages:
 
   '@babel/code-frame@7.29.7':
