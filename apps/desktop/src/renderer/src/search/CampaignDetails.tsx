@@ -86,6 +86,7 @@ export function CampaignDetails({ campaignId, onChanged }: CampaignDetailsProps)
           {notice.text}
         </div>
       ) : null}
+      {error ? <div className="notice error">{error}</div> : null}
       {campaign.lastError ? (
         <div className="notice error">Last error: {campaign.lastError}</div>
       ) : null}
@@ -97,7 +98,7 @@ export function CampaignDetails({ campaignId, onChanged }: CampaignDetailsProps)
       )}
       {progress && progress.totalJobs > 0 ? <ProgressSummary progress={progress} /> : null}
       {jobs.length > 0 ? (
-        <JobsTable jobs={jobs} hasMore={hasMoreJobs} onShowMore={showMoreJobs} />
+        <JobsTable jobs={jobs} hasMore={hasMoreJobs} onShowMore={() => void showMoreJobs()} />
       ) : null}
     </section>
   );
