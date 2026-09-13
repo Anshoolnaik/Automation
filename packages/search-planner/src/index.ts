@@ -150,3 +150,11 @@ export {
   type CreateSearchCampaignInput,
   type SearchCampaignServiceDependencies,
 } from './campaigns/search-campaign-service.js';
+
+// Job queue
+export {
+  DEFAULT_MAX_ATTEMPTS,
+  SearchJobQueue,
+  type JobFilter,
+  type SearchJobQueueOptions,
+} from './jobs/search-job-queue.js';
