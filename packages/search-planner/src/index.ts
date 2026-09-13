@@ -17,6 +17,7 @@ export {
 export {
   SEARCH_CAMPAIGN_STATUSES,
   SEARCH_CAMPAIGN_TRANSITIONS,
+  SearchPlanSummarySchema,
   canTransitionCampaign,
   type SearchCampaign,
   type SearchCampaignStatus,
@@ -114,3 +115,22 @@ export {
   DEFAULT_MAX_VARIATIONS_PER_INSTITUTION,
   buildPlanningContext,
 } from './planner/planning-context.js';
+
+// Ports
+export type {
+  CampaignStatusChange,
+  InstitutionStore,
+  JobSelection,
+  JobStatusChange,
+  NewSearchCampaign,
+  NewSearchJob,
+  RunningJobUpdate,
+  SearchCampaignStore,
+  SearchJobStore,
+  SearchProgressReader,
+  SearchQueryStore,
+  SearchSourceStore,
+  SearchStores,
+  SearchUnitOfWork,
+  StatusCountRow,
+} from './ports/search-stores.js';

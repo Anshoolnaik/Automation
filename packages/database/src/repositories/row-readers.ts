@@ -37,3 +37,19 @@ export function readJsonObject(row: SqlRow, column: string): Record<string, unkn
     ? (value as Record<string, unknown>)
     : {};
 }
+
+export function readInteger(row: SqlRow, column: string): number {
+  const value = row[column];
+  if (typeof value === 'number' && Number.isInteger(value)) return value;
+  if (typeof value === 'bigint') return Number(value);
+  throw new TypeError(`Expected column "${column}" to be INTEGER, got ${typeof value}`);
+}
+
+export function readBoolean(row: SqlRow, column: string): boolean {
+  return readInteger(row, column) !== 0;
+}
+
+export function readNullableJson(row: SqlRow, column: string): unknown {
+  const value = readNullableString(row, column);
+  return value === null ? null : (JSON.parse(value) as unknown);
+}

@@ -1,6 +1,11 @@
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
-import { DatabaseSync, type SQLInputValue, type SQLOutputValue } from 'node:sqlite';
+import {
+  DatabaseSync,
+  type SQLInputValue,
+  type SQLOutputValue,
+  type StatementSync,
+} from 'node:sqlite';
 
 export type SqlParams = Record<string, SQLInputValue>;
 export type SqlRow = Record<string, SQLOutputValue>;
@@ -37,16 +42,26 @@ export function openSqliteDatabase(filePath: string): SqliteDatabase {
   db.exec('PRAGMA busy_timeout = 5000');
 
   let open = true;
+  // Prepared statements are reused: bulk inserts run the same SQL thousands of times.
+  const statements = new Map<string, StatementSync>();
+  const prepare = (sql: string): StatementSync => {
+    let statement = statements.get(sql);
+    if (!statement) {
+      statement = db.prepare(sql);
+      statements.set(sql, statement);
+    }
+    return statement;
+  };
 
   return {
     filePath,
     exec: (sql) => db.exec(sql),
     run: (sql, params = {}) => {
-      const result = db.prepare(sql).run(params);
+      const result = prepare(sql).run(params);
       return { changes: Number(result.changes) };
     },
-    get: (sql, params = {}) => db.prepare(sql).get(params),
-    all: (sql, params = {}) => db.prepare(sql).all(params),
+    get: (sql, params = {}) => prepare(sql).get(params),
+    all: (sql, params = {}) => prepare(sql).all(params),
     transaction: (work) => {
       db.exec('BEGIN IMMEDIATE');
       try {
@@ -64,6 +79,7 @@ export function openSqliteDatabase(filePath: string): SqliteDatabase {
     close: () => {
       if (!open) return;
       open = false;
+      statements.clear();
       db.close();
     },
   };

@@ -7,6 +7,18 @@ import { SqliteAgentRunRepository } from './repositories/sqlite-agent-run-reposi
 import { SqliteBrowserEventRepository } from './repositories/sqlite-browser-event-repository.js';
 import { SqliteCheckpointRepository } from './repositories/sqlite-checkpoint-repository.js';
 import { SqliteTaskRepository } from './repositories/sqlite-task-repository.js';
+import {
+  SqliteInstitutionRepository,
+  type InstitutionRepository,
+} from './repositories/search/sqlite-institution-repository.js';
+import {
+  SqliteSearchCampaignRepository,
+  type SearchCampaignRepository,
+} from './repositories/search/sqlite-search-campaign-repository.js';
+import {
+  SqliteSearchSourceRepository,
+  type SearchSourceRepository,
+} from './repositories/search/sqlite-search-source-repository.js';
 import type {
   AgentRunRepository,
   BrowserEventRepository,
@@ -22,6 +34,11 @@ export interface AtlasDatabase {
   readonly tasks: TaskRepository;
   readonly browserEvents: BrowserEventRepository;
   readonly checkpoints: CheckpointRepository;
+  readonly searchSources: SearchSourceRepository;
+  readonly searchCampaigns: SearchCampaignRepository;
+  readonly institutions: InstitutionRepository;
+  /** Runs `work` in one transaction; every repository write inside it commits or rolls back together. */
+  transaction<T>(work: () => T): T;
   /** Checkpoints the WAL into the main file and closes the connection. */
   close(): void;
 }
@@ -56,6 +73,10 @@ export function openAtlasDatabase(options: OpenAtlasDatabaseOptions): AtlasDatab
     tasks: new SqliteTaskRepository(context),
     browserEvents: new SqliteBrowserEventRepository(context),
     checkpoints: new SqliteCheckpointRepository(context),
+    searchSources: new SqliteSearchSourceRepository(context),
+    searchCampaigns: new SqliteSearchCampaignRepository(context),
+    institutions: new SqliteInstitutionRepository(context),
+    transaction: (work) => db.transaction(work),
     close: () => {
       if (closed) return;
       closed = true;

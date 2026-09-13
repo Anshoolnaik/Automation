@@ -22,3 +22,15 @@ export {
   type TaskRepository,
 } from './repositories/types.js';
 export { IN_MEMORY, openSqliteDatabase, type SqliteDatabase } from './sqlite/sqlite-database.js';
+export {
+  SqliteInstitutionRepository,
+  type InstitutionRepository,
+} from './repositories/search/sqlite-institution-repository.js';
+export {
+  SqliteSearchCampaignRepository,
+  type SearchCampaignRepository,
+} from './repositories/search/sqlite-search-campaign-repository.js';
+export {
+  SqliteSearchSourceRepository,
+  type SearchSourceRepository,
+} from './repositories/search/sqlite-search-source-repository.js';

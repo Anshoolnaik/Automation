@@ -11,6 +11,8 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@atlas/agent-protocol": "workspace:*"
+    "@atlas/agent-protocol": "workspace:*",
+    "@atlas/search-planner": "workspace:*",
+    "zod": "^4.6.2"
   }
 }

@@ -10,27 +10,42 @@ afterEach(() => {
   db?.close();
 });
 
+const latestVersion = MIGRATIONS.at(-1)!.version;
+const nextVersion = latestVersion + 1;
+
 const tableNames = () =>
   db
     .all("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
     .map((row) => row.name);
 
 describe('migrate', () => {
-  it('creates the Phase-1 schema on a fresh database', () => {
+  it('creates the full schema on a fresh database, recording every migration in order', () => {
     db = openSqliteDatabase(IN_MEMORY);
     const report = migrate(db, MIGRATIONS, () => new Date('2026-09-13T00:00:00Z'));
 
-    expect(report).toEqual({ applied: [1], currentVersion: 1 });
-    expect(tableNames()).toEqual([
-      'agent_runs',
-      'browser_events',
-      'checkpoints',
-      'schema_migrations',
-      'tasks',
-    ]);
-    expect(db.all('SELECT * FROM schema_migrations')).toEqual([
-      { version: 1, name: 'initial_schema', applied_at: '2026-09-13T00:00:00.000Z' },
-    ]);
+    const versions = MIGRATIONS.map((migration) => migration.version);
+    expect(report).toEqual({ applied: versions, currentVersion: latestVersion });
+    // Phase-1 tables
+    expect(tableNames()).toEqual(
+      expect.arrayContaining([
+        'agent_runs',
+        'browser_events',
+        'checkpoints',
+        'schema_migrations',
+        'tasks',
+      ]),
+    );
+    expect(db.all('SELECT * FROM schema_migrations ORDER BY version')).toEqual(
+      MIGRATIONS.map((migration) => ({
+        version: migration.version,
+        name: migration.name,
+        applied_at: '2026-09-13T00:00:00.000Z',
+      })),
+    );
+    expect(db.all('SELECT * FROM schema_migrations')[0]).toMatchObject({
+      version: 1,
+      name: 'initial_schema',
+    });
   });
 
   it('is idempotent', () => {
@@ -44,9 +59,9 @@ describe('migrate', () => {
     migrate(db, MIGRATIONS);
     const report = migrate(db, [
       ...MIGRATIONS,
-      { version: 2, name: 'add_notes', up: 'ALTER TABLE tasks ADD COLUMN notes TEXT' },
+      { version: nextVersion, name: 'add_notes', up: 'ALTER TABLE tasks ADD COLUMN notes TEXT' },
     ]);
-    expect(report.applied).toEqual([2]);
+    expect(report.applied).toEqual([nextVersion]);
     expect(db.all('PRAGMA table_info(tasks)').map((c) => c.name)).toContain('notes');
   });
 
@@ -61,7 +76,7 @@ describe('migrate', () => {
 
   it('refuses a database written by a newer Atlas version', () => {
     db = openSqliteDatabase(IN_MEMORY);
-    migrate(db, [...MIGRATIONS, { version: 2, name: 'future', up: 'SELECT 1' }]);
+    migrate(db, [...MIGRATIONS, { version: nextVersion, name: 'future', up: 'SELECT 1' }]);
     expect(() => migrate(db, MIGRATIONS)).toThrow(/newer version of Atlas Agent/);
   });
 
