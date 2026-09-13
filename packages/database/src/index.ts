@@ -1,5 +1,6 @@
 export {
   openAtlasDatabase,
+  searchStoresOf,
   type AtlasDatabase,
   type OpenAtlasDatabaseOptions,
 } from './atlas-database.js';
@@ -42,3 +43,7 @@ export {
   SqliteSearchQueryRepository,
   type SearchQueryRepository,
 } from './repositories/search/sqlite-search-query-repository.js';
+export {
+  SqliteSearchProgressRepository,
+  type SearchProgressRepository,
+} from './repositories/search/sqlite-search-progress-repository.js';

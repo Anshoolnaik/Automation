@@ -1,5 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
+import type { SearchStores } from '@atlas/search-planner';
+
 import { MIGRATIONS, type Migration } from './migrations/index.js';
 import { migrate, type MigrationReport } from './migrator.js';
 import type { RepositoryContext } from './repositories/repository-context.js';
@@ -19,6 +21,10 @@ import {
   SqliteSearchJobRepository,
   type SearchJobRepository,
 } from './repositories/search/sqlite-search-job-repository.js';
+import {
+  SqliteSearchProgressRepository,
+  type SearchProgressRepository,
+} from './repositories/search/sqlite-search-progress-repository.js';
 import {
   SqliteSearchQueryRepository,
   type SearchQueryRepository,
@@ -47,6 +53,7 @@ export interface AtlasDatabase {
   readonly institutions: InstitutionRepository;
   readonly searchQueries: SearchQueryRepository;
   readonly searchJobs: SearchJobRepository;
+  readonly searchProgress: SearchProgressRepository;
   /** Runs `work` in one transaction; every repository write inside it commits or rolls back together. */
   transaction<T>(work: () => T): T;
   /** Checkpoints the WAL into the main file and closes the connection. */
@@ -88,6 +95,7 @@ export function openAtlasDatabase(options: OpenAtlasDatabaseOptions): AtlasDatab
     institutions: new SqliteInstitutionRepository(context),
     searchQueries: new SqliteSearchQueryRepository(context),
     searchJobs: new SqliteSearchJobRepository(context),
+    searchProgress: new SqliteSearchProgressRepository(context),
     transaction: (work) => db.transaction(work),
     close: () => {
       if (closed) return;
@@ -98,5 +106,18 @@ export function openAtlasDatabase(options: OpenAtlasDatabaseOptions): AtlasDatab
         db.close();
       }
     },
+  };
+}
+
+/** Adapts the database to the search-planner persistence ports. */
+export function searchStoresOf(database: AtlasDatabase): SearchStores {
+  return {
+    sources: database.searchSources,
+    campaigns: database.searchCampaigns,
+    institutions: database.institutions,
+    queries: database.searchQueries,
+    jobs: database.searchJobs,
+    progress: database.searchProgress,
+    unitOfWork: { transaction: (work) => database.transaction(work) },
   };
 }

@@ -158,3 +158,18 @@ export {
   type JobFilter,
   type SearchJobQueueOptions,
 } from './jobs/search-job-queue.js';
+
+// Progress and composition
+export {
+  SearchProgressService,
+  type CountryProgress,
+  type InstitutionProgress,
+  type ProgressCounts,
+  type SearchProgress,
+  type SourceProgress,
+} from './progress/search-progress-service.js';
+export {
+  createSearchServices,
+  type SearchServices,
+  type SearchServicesOptions,
+} from './services.js';
