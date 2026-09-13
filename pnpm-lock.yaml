@@ -207,6 +207,15 @@ importers:
 
   packages/logger: {}
 
+  packages/search-planner:
+    dependencies:
+      '@atlas/logger':
+        specifier: workspace:*
+        version: link:../logger
+      zod:
+        specifier: ^4.6.2
+        version: 4.6.2
+
 packages:
 
   '@babel/code-frame@7.29.7':

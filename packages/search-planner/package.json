@@ -1,0 +1,17 @@
+{
+  "name": "@atlas/search-planner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Search campaigns: deterministic query planning, persistent search jobs, queue and progress",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@atlas/logger": "workspace:*",
+    "zod": "^4.6.2"
+  }
+}
