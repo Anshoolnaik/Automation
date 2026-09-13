@@ -87,3 +87,30 @@ export {
 } from './institutions/fixtures/institution-fixtures.js';
 export type { InstitutionProvider } from './institutions/institution-provider.js';
 export { StaticInstitutionProvider } from './institutions/static-institution-provider.js';
+
+// Strategies and query generation
+export { countryBroadStrategy } from './strategies/country-broad.strategy.js';
+export { countryLevelStrategy } from './strategies/country-level.strategy.js';
+export { DEFAULT_SEARCH_STRATEGIES } from './strategies/default-strategies.js';
+export { institutionBroadStrategy } from './strategies/institution-broad.strategy.js';
+export { institutionLevelStrategy } from './strategies/institution-level.strategy.js';
+export { institutionKeywordVariantStrategy } from './strategies/keyword-variant.strategy.js';
+export { PRIORITY_BASE, scorePriority, type PriorityKind } from './strategies/priority.js';
+export { programSpecificStrategy } from './strategies/program-specific.strategy.js';
+export type { SearchPlanningContext, SearchStrategy } from './strategies/search-strategy.js';
+export {
+  DEFAULT_PLANNING_LIMITS,
+  PlanningLimitsSchema,
+  resolvePlanningLimits,
+  type PlanningLimits,
+} from './query/planning-limits.js';
+export {
+  generateSearchQueries,
+  type GeneratedQueries,
+  type LimitDiscards,
+  type PlanningStatistics,
+} from './query/query-generator.js';
+export {
+  DEFAULT_MAX_VARIATIONS_PER_INSTITUTION,
+  buildPlanningContext,
+} from './planner/planning-context.js';
