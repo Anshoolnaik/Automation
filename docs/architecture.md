@@ -1,7 +1,9 @@
-# Atlas Agent architecture (Phase 1)
+# Atlas Agent architecture
 
 This document explains how Atlas Agent is put together and why. It covers the Electron process
-split, the browser abstraction, the extension link, persistence, and the task lifecycle.
+split, the browser abstraction, the extension link, persistence and the task lifecycle (Phase 1),
+and how search planning (Phase 2) fits in. Search planning itself is described in
+[search-planning.md](search-planning.md).
 
 ## Overview
 
@@ -20,9 +22,12 @@ flowchart LR
     BS["BrowserSession"]
     CP["Phase-1 CommandParser"]
     SRV["AgentServer (ws)"]
+    SP["Phase-2 search-planner<br/>planner · queue · progress"]
     DB[("SQLite<br/>node:sqlite")]
   end
 
+  M --> SP
+  SP -- "store ports" --> DB
   M --> AS
   AS --> TR & BS
   TR --> CP
@@ -41,21 +46,27 @@ Two rules shape the code base:
    Electron, and `apps/desktop/src/main` only wires them together.
 2. **Dependencies point inwards through interfaces.** `agent-core` depends on interfaces (ports)
    such as `BrowserController`, `ExtensionChannel`, `TaskStore` and `BrowserEventRecorder`, never
-   on Playwright, `ws` or SQLite directly.
+   on Playwright, `ws` or SQLite directly. `search-planner` follows the same rule: it defines
+   `SearchStores` and `InstitutionProvider` ports, and `@atlas/database` implements the stores.
+
+Transcript-specific knowledge (countries, education levels, keywords, strategies) lives only in
+`@atlas/search-planner`. `BrowserController`, `TaskRunner`, the Electron main process, the WebSocket
+server and the extension contain none of it, so a planner for a different task can sit alongside.
 
 ### Packages
 
-| Package                 | Responsibility                                                                                                                                 | Depends on                 |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| `@atlas/agent-protocol` | zod schemas for every WebSocket message; shared state names (`AgentState`, `BrowserState`, …)                                                  | zod                        |
-| `@atlas/logger`         | Structured log entries, redaction, rotating file / memory / console transports                                                                 | —                          |
-| `@atlas/browser-core`   | `BrowserController` interface, `BrowserAction` union, generic executor, URL policy; Playwright implementation behind the `/playwright` subpath | logger, playwright-core    |
-| `@atlas/agent-server`   | Localhost WebSocket server: origin and loopback checks, one active extension, ping and idle detection, request correlation                     | agent-protocol, logger, ws |
-| `@atlas/database`       | `node:sqlite` driver wrapper, migrations, repositories                                                                                         | agent-protocol             |
-| `@atlas/command-parser` | Phase-1 deterministic command → action plan                                                                                                    | browser-core               |
-| `@atlas/agent-core`     | State machines, `BrowserSession`, `TaskRunner`, `AgentService`                                                                                 | the above (via interfaces) |
-| `@atlas/desktop`        | Electron main/preload/renderer, IPC, configuration, adapters, shutdown                                                                         | all packages               |
-| `@atlas/extension`      | Chrome MV3 service worker and popup                                                                                                            | agent-protocol             |
+| Package                 | Responsibility                                                                                                                                                                         | Depends on                                                   |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `@atlas/agent-protocol` | zod schemas for every WebSocket message; shared state names (`AgentState`, `BrowserState`, …)                                                                                          | zod                                                          |
+| `@atlas/logger`         | Structured log entries, redaction, rotating file / memory / console transports                                                                                                         | —                                                            |
+| `@atlas/browser-core`   | `BrowserController` interface, `BrowserAction` union, generic executor, URL policy; Playwright implementation behind the `/playwright` subpath                                         | logger, playwright-core                                      |
+| `@atlas/agent-server`   | Localhost WebSocket server: origin and loopback checks, one active extension, ping and idle detection, request correlation                                                             | agent-protocol, logger, ws                                   |
+| `@atlas/database`       | `node:sqlite` driver wrapper, migrations, repositories (Phase-1 and search), `searchStoresOf()` adapter                                                                                | agent-protocol, search-planner (domain types and ports), zod |
+| `@atlas/command-parser` | Phase-1 deterministic command → action plan                                                                                                                                            | browser-core                                                 |
+| `@atlas/agent-core`     | State machines, `BrowserSession`, `TaskRunner`, `AgentService`                                                                                                                         | the above (via interfaces)                                   |
+| `@atlas/search-planner` | Phase 2: search vocabulary, `SearchIntent`, institutions, strategies, query identity, `SearchPlanner`, `SearchCampaignService`, `SearchJobQueue`, `SearchProgressService`, store ports | logger, zod                                                  |
+| `@atlas/desktop`        | Electron main/preload/renderer, IPC, configuration, adapters, shutdown                                                                                                                 | all packages                                                 |
+| `@atlas/extension`      | Chrome MV3 service worker and popup                                                                                                                                                    | agent-protocol                                               |
 
 Internal packages export TypeScript source (`"exports": "./src/index.ts"`). electron-vite and Vite
 bundle them into the desktop app and the extension, so no per-package build step exists.
@@ -82,10 +93,17 @@ Window hardening (`window/create-main-window.ts`):
 `src/shared` is imported by all three processes:
 
 - `ipc-channels.ts` is the complete whitelist. Invoke channels are `browser:launch`,
-  `browser:stop`, `task:run`, `agent:get-status`, `extension:get-status` and `logs:subscribe`.
+  `browser:stop`, `task:run`, `agent:get-status`, `extension:get-status` and `logs:subscribe`,
+  plus the Phase-2 channels `search:create-campaign`, `search:plan-campaign`,
+  `search:list-campaigns`, `search:get-campaign`, `search:get-progress` and `search:list-jobs`.
   Push events are `agent:status-changed` and `logs:entry`. No other string is ever used as a channel.
-- `ipc-types.ts` defines the `AtlasApi` exposed as `window.atlas` and every payload type.
-- `ipc-schemas.ts` holds zod schemas for renderer → main payloads.
+- `ipc-types.ts` defines the `AtlasApi` exposed as `window.atlas` and every payload type, including
+  the search data transfer objects.
+- `search-vocabulary.ts` repeats the search status and level values as dependency-free literals,
+  because the renderer cannot import `@atlas/search-planner` (it uses Node APIs). A unit test keeps
+  them identical to the domain.
+- `ipc-schemas.ts` (Phase 1) and `main/ipc/search-ipc-schemas.ts` (Phase 2) hold the zod schemas
+  for renderer → main payloads.
 
 Every handler (`main/ipc/ipc-handlers.ts`):
 
@@ -267,6 +285,45 @@ erDiagram
   become `FAILED`.
 - **Events:** browser lifecycle, extension connection, active page changes and each task action are
   recorded. URLs and details go through the log redaction first; typed values are never stored.
+- **Search planning (Phase 2):**
+  - Migration `0002` adds `search_sources` (with Scribd seeded), `search_campaigns` and
+    `institutions`; migration `0003` adds `search_queries` and `search_jobs`.
+  - Deduplication is enforced by `UNIQUE (campaign_id, query_hash)` and
+    `UNIQUE (campaign_id, source_id, query_id)`.
+  - The job queue claims jobs with a single guarded `UPDATE … RETURNING`.
+  - Progress uses `GROUP BY` aggregates.
+  - `AtlasDatabase.transaction()` is the unit of work that makes a whole plan atomic.
+
+```mermaid
+erDiagram
+  search_campaigns ||--o{ search_queries : "campaign_id"
+  search_campaigns ||--o{ search_jobs : "campaign_id"
+  search_queries ||--o{ search_jobs : "query_id (same campaign)"
+  search_sources ||--o{ search_jobs : "source_id"
+  institutions ||--o{ search_queries : "institution_id (nullable)"
+  institutions ||--o{ search_jobs : "institution_id (nullable)"
+  search_campaigns { text id PK; text name; text status; text intent_json; text source_ids_json; text plan_summary_json; text last_error }
+  search_queries { text id PK; text campaign_id FK; text country_code; text strategy_id; text query_text; text normalized_query; text query_hash; integer priority }
+  search_jobs { text id PK; text campaign_id FK; text query_id FK; text source_id FK; text status; integer priority; integer attempt_count; integer current_page; integer discovered_count }
+  institutions { text id PK; text country_code; text name; text normalized_name; text institution_type }
+  search_sources { text id PK; text name; text base_url; integer enabled }
+```
+
+## Search planning (Phase 2)
+
+The desktop composition root opens the database once and shares it between two runtimes:
+
+- `agent-runtime.ts` (Phase 1): browser, WebSocket server and task runner.
+- `search/search-runtime.ts` (Phase 2): calls `createSearchServices({ stores: searchStoresOf(database),
+institutionProvider: new StaticInstitutionProvider(), logger })` and exposes a `SearchFacade`
+  that maps domain objects to renderer DTOs.
+
+The six `search:*` IPC handlers validate payloads with zod and use the same `IpcResult` pattern.
+Search error codes map to `INVALID_REQUEST`, `NOT_FOUND` or `INVALID_STATE`.
+
+Planning never touches the browser. `SearchJobQueue` is ready for future website adapters, which
+will claim jobs and drive `BrowserController`; that integration is described in
+[search-planning.md](search-planning.md#future-website-adapter-integration).
 
 ## Logging
 
@@ -366,7 +423,8 @@ order; each has a timeout, and a failing step is logged without blocking later o
 3. `close-browser`: the Playwright context closes cleanly, so Chrome flushes cookies and session
    data. **The profile directory is never deleted.**
 4. `flush-and-close-database`: the agent run is marked `STOPPED`, the WAL is checkpointed, and the
-   connection closes.
+   connection closes. The composition root owns this step, because the agent and search runtimes
+   share the database.
 5. `unregister-ipc`, then `flush-logs`: "Agent stopped" is written and the file queue drained.
 
 ## Cross-platform notes

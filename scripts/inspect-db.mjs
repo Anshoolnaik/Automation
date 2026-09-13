@@ -54,6 +54,37 @@ try {
   );
   const checkpoints = db.prepare('SELECT COUNT(*) AS count FROM checkpoints').get();
   process.stdout.write(`\nCheckpoints stored: ${checkpoints?.count ?? 0}\n`);
+
+  const hasSearchTables = db
+    .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'search_jobs'")
+    .get();
+  if (hasSearchTables) {
+    process.stdout.write('\nSearch campaigns (Phase 2)\n');
+    console.table(
+      db
+        .prepare(
+          `SELECT c.name, c.status, c.planned_at,
+             (SELECT COUNT(*) FROM search_queries q WHERE q.campaign_id = c.id) AS queries,
+             (SELECT COUNT(*) FROM search_jobs j WHERE j.campaign_id = c.id) AS jobs,
+             (SELECT COUNT(*) FROM search_jobs j WHERE j.campaign_id = c.id AND j.status = 'PENDING') AS pending,
+             (SELECT COUNT(DISTINCT q.query_hash) FROM search_queries q WHERE q.campaign_id = c.id) AS distinct_hashes
+           FROM search_campaigns c ORDER BY c.created_at DESC LIMIT 10`,
+        )
+        .all(),
+    );
+    process.stdout.write('\nHighest-priority search jobs\n');
+    console.table(
+      db
+        .prepare(
+          `SELECT j.priority, q.query_text, j.country_code, s.name AS source, j.status
+           FROM search_jobs j
+           JOIN search_queries q ON q.id = j.query_id
+           JOIN search_sources s ON s.id = j.source_id
+           ORDER BY j.priority DESC, j.created_at, j.rowid LIMIT 15`,
+        )
+        .all(),
+    );
+  }
 } finally {
   db.close();
 }

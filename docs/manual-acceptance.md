@@ -1,7 +1,10 @@
-# Phase 1 manual acceptance checklist
+# Manual acceptance checklists
 
-Run this on each target OS (Windows, macOS) before calling Phase 1 done. Record the OS, Chrome
-version and date in the table at the end.
+Run these on each target OS (Windows, macOS) before calling a phase done. Record the OS, Chrome
+version and date in the sign-off tables. The Phase 2 checklist is
+[further down](#phase-2-search-planning).
+
+# Phase 1: core browser automation shell
 
 Most of this flow is also automated: `pnpm test:integration` covers A, B, C, E and F, plus an
 offline D. `ATLAS_RUN_NETWORK_TESTS=1 pnpm test:integration` adds the real Wikipedia D. The manual
@@ -139,3 +142,85 @@ Expected:
 | OS / version | Chrome version | Tester | Date | A   | B   | C   | D   | E   | F   |
 | ------------ | -------------- | ------ | ---- | --- | --- | --- | --- | --- | --- |
 |              |                |        |      |     |     |     |     |     |     |
+
+# Phase 2: search planning
+
+Phase 2 plans and stores search work only. **No step below should open, search or scrape any
+website.** `pnpm test:integration` automates this flow (the Electron "Phase 2" test and
+`search-planning.int.test.ts`); the manual pass checks it in a real session.
+
+## P2-1: Phase 1 still works
+
+1. Run `pnpm dev`.
+
+Expected:
+
+- [ ] The window opens on the **Agent** tab with **Idle**, **Not Running** and **Disconnected**.
+- [ ] Phase-1 tests A–F above still pass (at least: launch the Agent Browser and run
+      `Open wikipedia.org and search for Alan Turing`).
+
+## P2-2: create and plan the test campaign
+
+1. Open the **Search Campaigns** tab.
+2. Click **Create Test Campaign**.
+3. Click **Generate Search Plan**.
+
+Expected:
+
+- [ ] After step 2, the campaign list shows **Transcript Search Test** (status **Draft**). Its details
+      show countries **Canada, United Kingdom, USA**, education levels **Diploma, Bachelor's
+      Degree, Master's Degree**, source **Scribd** and **10 transcript keywords**.
+- [ ] After step 3, the status becomes **Planned** and a green notice reads "Search plan generated:
+      … unique queries, … new jobs."
+- [ ] The summary shows non-zero **Institutions**, **Unique Queries** and **Search Jobs**
+      (with the fixture data: 3 countries, 14 institutions, 217 queries, 217 jobs). **Duplicates
+      Removed** is shown (0 for this campaign).
+- [ ] **Progress** shows every job as **Pending**, with 0 running, completed and failed.
+- [ ] The country table lists **Canada**, **United Kingdom** and **USA** with job counts that add up
+      to the total.
+- [ ] Chrome is not launched, and the Activity log shows "Search plan generated for …" with no
+      browser actions.
+
+## P2-3: inspect the generated jobs
+
+1. Scroll to **Search jobs** and click **Show more jobs** until the button disappears.
+
+Expected:
+
+- [ ] Jobs are ordered by priority (highest first); every job is **Pending** with source **Scribd**.
+- [ ] The list includes queries like:
+  - `Canada academic transcript`
+  - `Canada diploma transcript`
+  - `"University of Toronto" transcript`
+  - `"University of Toronto" bachelor transcript`
+  - `"University of Toronto" statement of results`
+- [ ] No query appears twice.
+- [ ] `pnpm db:inspect` shows the campaign with equal `queries`, `jobs`, `pending` and
+      `distinct_hashes` values.
+
+## P2-4: persistence across restarts
+
+1. Close Atlas.
+2. Start it again (`pnpm dev`) and open **Search Campaigns**.
+
+Expected:
+
+- [ ] **Transcript Search Test** is listed as **Planned**.
+- [ ] Its summary, progress and job list match what was shown before the restart.
+
+## P2-5: regenerate without duplicates
+
+1. With the campaign selected, click **Generate Search Plan** again.
+
+Expected:
+
+- [ ] The notice reads "… 0 new jobs." and the summary line says the last run added 0 new queries
+      and 0 new jobs.
+- [ ] **Unique Queries** and **Search Jobs** are unchanged.
+- [ ] `pnpm db:inspect` still shows `queries = jobs = distinct_hashes`.
+
+## Phase 2 sign-off
+
+| OS / version | Tester | Date | P2-1 | P2-2 | P2-3 | P2-4 | P2-5 |
+| ------------ | ------ | ---- | ---- | ---- | ---- | ---- | ---- |
+|              |        |      |      |      |      |      |      |

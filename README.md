@@ -3,11 +3,11 @@
 Atlas Agent is a desktop application that controls a dedicated, persistent Google Chrome
 profile. It will grow into a reusable AI-powered browser automation platform.
 
-**This repository is at Phase 1: the core browser automation shell.** It contains no AI or LLM
-integration, no scraping and no site-specific automation beyond a small Wikipedia search demo
-that exists only to exercise the infrastructure.
+**This repository is at Phase 2: search planning and the search job engine.** It contains no AI
+or LLM integration, no scraping and no site-specific automation beyond a small Wikipedia search
+demo that exists only to exercise the infrastructure.
 
-Phase 1 includes:
+Phase 1 (the core browser automation shell) includes:
 
 - Electron + React desktop app (sandboxed renderer, typed IPC)
 - Playwright-driven Google Chrome with a dedicated persistent profile
@@ -16,8 +16,22 @@ Phase 1 includes:
 - Structured, redacted logging to the UI and to rotating log files
 - A deliberately small, deterministic command parser and a task runner
 
-See [docs/architecture.md](docs/architecture.md) for how the pieces fit together, and
-[docs/manual-acceptance.md](docs/manual-acceptance.md) for the Phase 1 verification checklist.
+Phase 2 (search planning) adds:
+
+- Search campaigns for the academic transcript collection assignment: 48 countries with ISO codes,
+  education levels (Diploma and above) and a structured transcript keyword taxonomy
+- A deterministic planner that turns a campaign into de-duplicated search queries with documented
+  priorities and planning limits, using an institution provider (small static fixtures for now)
+- Persistent, source-specific search jobs (Scribd is configured as the first source), with a
+  concurrency-safe job queue, retry metadata and aggregate progress reporting
+- A **Search Campaigns** tab in the desktop app
+
+**Phase 2 generates and persists search work; it does not execute website searches.** Nothing
+visits, searches or scrapes Scribd or any other site.
+
+See [docs/architecture.md](docs/architecture.md) for how the pieces fit together,
+[docs/search-planning.md](docs/search-planning.md) for Phase-2 search planning, and
+[docs/manual-acceptance.md](docs/manual-acceptance.md) for the verification checklists.
 
 ---
 
@@ -71,6 +85,19 @@ controls it. This is expected and intentionally not hidden.
 
 Any other command fails with a message listing the supported forms.
 
+### Search campaigns (Phase 2)
+
+1. Open the **Search Campaigns** tab.
+2. Click **Create Test Campaign**. This creates _Transcript Search Test_ for Canada, the USA and
+   the United Kingdom; Diploma, Bachelor and Master; all transcript keywords; Scribd as the source.
+3. Click **Generate Search Plan**.
+
+The panel shows countries, institutions, unique queries, search jobs and duplicates removed.
+It also shows pending, running, completed and failed counts, a per-country summary and the jobs in
+priority order. With the fixture data the test campaign plans 217 queries and jobs across 14
+institutions. Generating again inserts nothing new ("0 new jobs"). Campaigns and jobs are stored in
+SQLite and survive restarts. See [docs/search-planning.md](docs/search-planning.md).
+
 ## Loading the Chrome extension
 
 Google Chrome 137+ no longer supports loading extensions from the command line, so the extension
@@ -115,7 +142,8 @@ Everything lives under Electron's `userData` directory (`app.getPath('userData')
   this can mean a one-time Keychain prompt for "Chrome Safe Storage". You can keep your normal
   Chrome open, but only one Chrome instance can use the Atlas profile at a time.
 - **Database.** Migrations run automatically at start-up. Runs or tasks left unfinished by a crash
-  are marked `ABORTED` or `FAILED` on the next start. Print recent tasks and events with:
+  are marked `ABORTED` or `FAILED` on the next start. Search campaigns, institutions, queries and
+  jobs (Phase 2) live in the same database. Print recent tasks, events and campaigns with:
 
   ```bash
   pnpm db:inspect                 # default location for this OS
@@ -156,7 +184,16 @@ pnpm build
 - **Extension ↔ agent server:** the built extension is installed into real Chrome and checked for
   auto-connect, tab metadata, page changes, the popup, and reconnection after the server restarts.
 - **Electron app:** the built app is driven through its UI for statuses, launch, a task, activity
-  log, SQLite records, graceful shutdown, and profile reuse after an Atlas restart.
+  log, SQLite records, graceful shutdown, and profile reuse after an Atlas restart. It also runs the
+  Phase-2 flow: create and plan a campaign, restart, and regenerate without duplicates.
+- **Search planning (no browser; always runs):** plan a Canada + United Kingdom campaign on a real
+  database file, check institutions, queries, jobs, hashes and progress against raw SQL, then
+  re-plan and reopen the database.
+
+Phase-2 unit tests cover the country, level and keyword configuration, intent validation,
+normalization and hashing, each strategy, deduplication, limits (including a 5,000-institution
+scale test), priorities, deterministic planning, repository constraints, campaign and job
+transitions, retries, queue ordering, concurrent claims and progress totals.
 
 To install the extension in branded Chrome, the tests use the DevTools protocol
 (`Extensions.loadUnpacked` with `--enable-unsafe-extension-debugging`). That flag exists **only in
@@ -185,7 +222,7 @@ Browser tests also skip themselves when Google Chrome is not installed.
 | `pnpm typecheck`               | Strict TypeScript across all packages                                       |
 | `pnpm lint` / `lint:fix`       | ESLint (type-aware)                                                         |
 | `pnpm format` / `format:check` | Prettier                                                                    |
-| `pnpm db:inspect`              | Print recent runs, tasks and events from SQLite                             |
+| `pnpm db:inspect`              | Print recent runs, tasks, events and search campaigns from SQLite           |
 
 ## Repository layout
 
@@ -198,9 +235,10 @@ packages/agent-server    Localhost WebSocket server for the extension
 packages/database        node:sqlite driver, migrations, repositories
 packages/command-parser  Phase-1 deterministic command parser
 packages/agent-core      State machines, BrowserSession, TaskRunner, AgentService
+packages/search-planner  Phase 2: campaigns, vocabulary, strategies, planner, job queue, progress
 extension/               Chrome MV3 extension (service worker + popup)
-tests/integration/       Real-browser and Electron integration tests
-docs/                    Architecture and manual acceptance checklist
+tests/integration/       Real-browser, Electron and search-planning integration tests
+docs/                    Architecture, search planning and manual acceptance checklists
 scripts/                 Developer utilities
 ```
 
@@ -226,6 +264,25 @@ scripts/                 Developer utilities
 - **Demo selectors can go stale.** The Wikipedia demo depends on Wikipedia's current markup.
 - **Verified on Windows 11 with Chrome 153.** macOS is supported by design (no OS-specific code,
   `node:path` and Electron path APIs throughout) but has not yet been run end to end.
+
+## Phase 2 limitations
+
+- **No execution.** Search jobs are planned and stored only. No website adapter exists, so jobs
+  stay `PENDING`; there is no Scribd automation, pagination, login or document extraction.
+- **Fixture institutions.** `StaticInstitutionProvider` holds 22 institutions across five
+  countries. Other countries get country-level queries only until real institution import exists.
+- **Preset campaign in the UI.** The desktop app creates the test campaign; there is no form for
+  custom countries, levels, keywords or programs yet (the IPC API and services already accept
+  them).
+- **Re-planning is additive.** It never deletes queries or jobs. A narrower intent leaves earlier
+  jobs in place, and stored priorities are not rewritten.
+- **Identical query text is one search.** Two institutions with the same name in different
+  countries produce one query, attributed to the first country in canonical order.
+- **Simple institution identity.** An institution is unique by (country, normalized name); a
+  provider that uses a different ID for an existing name is rejected rather than merged.
+- **No automatic retries.** Retries are explicit calls within a maximum attempt count; there is no
+  scheduler or backoff yet.
+- **No campaign editing, deletion or retention** for campaigns, queries or jobs.
 
 ## Troubleshooting
 
