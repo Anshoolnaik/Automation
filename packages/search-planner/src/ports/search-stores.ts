@@ -34,6 +34,9 @@ export interface CampaignStatusChange {
   markStarted?: boolean;
   markCompleted?: boolean;
   planSummary?: SearchPlanSummary;
+  /** Replaces the stored intent (e.g. with the canonical intent a plan was built from). */
+  intent?: SearchIntent;
+  sourceIds?: readonly string[];
   /** `undefined` leaves the stored error unchanged; `null` clears it. */
   lastError?: string | null;
 }

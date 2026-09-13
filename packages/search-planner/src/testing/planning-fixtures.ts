@@ -30,7 +30,8 @@ export function createTestContext(
 /** A synthetic country with many institutions, for scale tests. */
 export function syntheticInstitutions(countryCode: string, count: number): Institution[] {
   return Array.from({ length: count }, (_, index) => {
-    const name = `Synthetic University Number ${index + 1}`;
+    // The country is part of the name: identical names in two countries would be the same search.
+    const name = `Synthetic University ${countryCode} Number ${index + 1}`;
     return {
       id: createInstitutionId(countryCode, name),
       countryCode,

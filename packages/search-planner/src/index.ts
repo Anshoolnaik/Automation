@@ -134,3 +134,19 @@ export type {
   SearchUnitOfWork,
   StatusCountRow,
 } from './ports/search-stores.js';
+
+// Planning services
+export { resolveEnabledSources } from './planner/resolve-sources.js';
+export {
+  SearchPlanner,
+  type SearchPlannerDependencies,
+  type SearchPlanResult,
+  type SearchPlanningInput,
+} from './planner/search-planner.js';
+export {
+  MAX_CAMPAIGN_NAME_LENGTH,
+  MAX_JOB_PAGE_SIZE,
+  SearchCampaignService,
+  type CreateSearchCampaignInput,
+  type SearchCampaignServiceDependencies,
+} from './campaigns/search-campaign-service.js';

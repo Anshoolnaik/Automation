@@ -68,6 +68,8 @@ export class SqliteSearchCampaignRepository implements SearchCampaignRepository 
          started_at = CASE WHEN :markStarted = 1 THEN :now ELSE started_at END,
          completed_at = CASE WHEN :markCompleted = 1 THEN :now ELSE completed_at END,
          plan_summary_json = CASE WHEN :hasSummary = 1 THEN :summary ELSE plan_summary_json END,
+         intent_json = CASE WHEN :hasIntent = 1 THEN :intentJson ELSE intent_json END,
+         source_ids_json = CASE WHEN :hasSources = 1 THEN :sourceIdsJson ELSE source_ids_json END,
          last_error = CASE WHEN :setError = 1 THEN :lastError ELSE last_error END
        WHERE id = :id AND status IN (${from.sql})
        RETURNING *`,
@@ -81,6 +83,10 @@ export class SqliteSearchCampaignRepository implements SearchCampaignRepository 
         markCompleted: flag(change.markCompleted),
         hasSummary: flag(change.planSummary !== undefined),
         summary: change.planSummary ? JSON.stringify(change.planSummary) : null,
+        hasIntent: flag(change.intent !== undefined),
+        intentJson: change.intent ? JSON.stringify(change.intent) : null,
+        hasSources: flag(change.sourceIds !== undefined),
+        sourceIdsJson: change.sourceIds ? JSON.stringify([...change.sourceIds]) : null,
         setError: flag(change.lastError !== undefined),
         lastError: change.lastError ?? null,
       },
