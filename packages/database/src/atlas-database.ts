@@ -16,6 +16,14 @@ import {
   type SearchCampaignRepository,
 } from './repositories/search/sqlite-search-campaign-repository.js';
 import {
+  SqliteSearchJobRepository,
+  type SearchJobRepository,
+} from './repositories/search/sqlite-search-job-repository.js';
+import {
+  SqliteSearchQueryRepository,
+  type SearchQueryRepository,
+} from './repositories/search/sqlite-search-query-repository.js';
+import {
   SqliteSearchSourceRepository,
   type SearchSourceRepository,
 } from './repositories/search/sqlite-search-source-repository.js';
@@ -37,6 +45,8 @@ export interface AtlasDatabase {
   readonly searchSources: SearchSourceRepository;
   readonly searchCampaigns: SearchCampaignRepository;
   readonly institutions: InstitutionRepository;
+  readonly searchQueries: SearchQueryRepository;
+  readonly searchJobs: SearchJobRepository;
   /** Runs `work` in one transaction; every repository write inside it commits or rolls back together. */
   transaction<T>(work: () => T): T;
   /** Checkpoints the WAL into the main file and closes the connection. */
@@ -76,6 +86,8 @@ export function openAtlasDatabase(options: OpenAtlasDatabaseOptions): AtlasDatab
     searchSources: new SqliteSearchSourceRepository(context),
     searchCampaigns: new SqliteSearchCampaignRepository(context),
     institutions: new SqliteInstitutionRepository(context),
+    searchQueries: new SqliteSearchQueryRepository(context),
+    searchJobs: new SqliteSearchJobRepository(context),
     transaction: (work) => db.transaction(work),
     close: () => {
       if (closed) return;

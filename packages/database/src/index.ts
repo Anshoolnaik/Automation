@@ -34,3 +34,11 @@ export {
   SqliteSearchSourceRepository,
   type SearchSourceRepository,
 } from './repositories/search/sqlite-search-source-repository.js';
+export {
+  SqliteSearchJobRepository,
+  type SearchJobRepository,
+} from './repositories/search/sqlite-search-job-repository.js';
+export {
+  SqliteSearchQueryRepository,
+  type SearchQueryRepository,
+} from './repositories/search/sqlite-search-query-repository.js';
