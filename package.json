@@ -34,6 +34,7 @@
     "@atlas/command-parser": "workspace:*",
     "@atlas/database": "workspace:*",
     "@atlas/logger": "workspace:*",
+    "@atlas/search-planner": "workspace:*",
     "@eslint/js": "^10.0.1",
     "@types/node": "^22.20.2",
     "@types/ws": "^8.18.1",

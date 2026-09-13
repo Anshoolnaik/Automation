@@ -29,6 +29,9 @@ importers:
       '@atlas/logger':
         specifier: workspace:*
         version: link:packages/logger
+      '@atlas/search-planner':
+        specifier: workspace:*
+        version: link:packages/search-planner
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.10.0)
@@ -95,6 +98,9 @@ importers:
       '@atlas/logger':
         specifier: workspace:*
         version: link:../../packages/logger
+      '@atlas/search-planner':
+        specifier: workspace:*
+        version: link:../../packages/search-planner
       playwright-core:
         specifier: ^1.63.0
         version: 1.63.0

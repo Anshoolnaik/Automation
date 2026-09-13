@@ -30,6 +30,15 @@ const api: AtlasApi = {
   extension: {
     getStatus: () => ipcRenderer.invoke(IpcChannel.ExtensionGetStatus),
   },
+  search: {
+    createCampaign: (request) => ipcRenderer.invoke(IpcChannel.SearchCreateCampaign, request),
+    planCampaign: (campaignId) => ipcRenderer.invoke(IpcChannel.SearchPlanCampaign, { campaignId }),
+    listCampaigns: () => ipcRenderer.invoke(IpcChannel.SearchListCampaigns),
+    getCampaign: (campaignId) => ipcRenderer.invoke(IpcChannel.SearchGetCampaign, { campaignId }),
+    getProgress: (campaignId) => ipcRenderer.invoke(IpcChannel.SearchGetProgress, { campaignId }),
+    listJobs: (campaignId, page = {}) =>
+      ipcRenderer.invoke(IpcChannel.SearchListJobs, { campaignId, ...page }),
+  },
   logs: {
     subscribe: () => ipcRenderer.invoke(IpcChannel.LogsSubscribe),
     onEntry: (listener) => listen<LogEntryDto>(IpcEvent.LogEntry, listener),

@@ -5,6 +5,7 @@ import { IpcChannel } from '../../shared/ipc-channels.js';
 import { MAX_COMMAND_LENGTH } from '../../shared/ipc-limits.js';
 import type { AgentStatusSnapshot, LogEntryDto } from '../../shared/ipc-types.js';
 import type { AgentFacade } from '../agent-facade.js';
+import type { SearchFacade } from '../search/search-facade.js';
 import { LogBroadcaster, type LogSubscriber } from '../logging/log-broadcaster.js';
 import { createIpcHandlers } from './ipc-handlers.js';
 
@@ -31,8 +32,17 @@ function setup(overrides: Partial<AgentFacade> = {}, shuttingDown = false) {
   const memory = new MemoryTransport();
   const logManager = createLogManager({ transports: [memory] });
   const logs = new LogBroadcaster(memory);
+  const search: SearchFacade = {
+    createCampaign: vi.fn(),
+    planCampaign: vi.fn(),
+    listCampaigns: vi.fn(() => []),
+    getCampaign: vi.fn(),
+    getProgress: vi.fn(),
+    listJobs: vi.fn(() => []),
+  };
   const handlers = createIpcHandlers({
     agent,
+    search,
     logs,
     logger: createNoopLogger(),
     isShuttingDown: () => shuttingDown,

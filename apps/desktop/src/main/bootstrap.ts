@@ -14,8 +14,10 @@ import { createAgentRuntime } from './agent-runtime.js';
 import { ensureAppDirectories, resolveAppPaths, type AppPaths } from './app-paths.js';
 import { loadAppConfig, type AppConfig } from './config.js';
 import { createIpcHandlers } from './ipc/ipc-handlers.js';
+import { openDatabaseForSession } from './persistence/open-database.js';
 import { registerIpcHandlers } from './ipc/register-ipc.js';
 import { LogBroadcaster } from './logging/log-broadcaster.js';
+import { createSearchRuntime } from './search/search-runtime.js';
 import { runShutdownSteps, type ShutdownStep } from './shutdown/run-shutdown.js';
 import { createMainWindow } from './window/create-main-window.js';
 import { hardenSession } from './window/harden-session.js';
@@ -45,7 +47,13 @@ export async function bootstrapAtlas(): Promise<AtlasApplication> {
     },
   });
 
-  const runtime = createAgentRuntime({ config, paths, logs: logManager });
+  // Throws if the database cannot be opened; startup then fails with a dialog.
+  const { database, agentRunId } = openDatabaseForSession(
+    paths.databaseFile,
+    logManager.forComponent('database'),
+  );
+  const runtime = createAgentRuntime({ config, paths, logs: logManager, database, agentRunId });
+  const search = createSearchRuntime({ database, logs: logManager });
   const agent = runtime.facade;
   await runtime.start();
 
@@ -65,6 +73,7 @@ export async function bootstrapAtlas(): Promise<AtlasApplication> {
     logger: logManager.forComponent('ipc'),
     handlers: createIpcHandlers({
       agent,
+      search: search.facade,
       logs: logBroadcaster,
       logger: logManager.forComponent('ipc'),
       isShuttingDown: () => shuttingDown,
@@ -88,6 +97,14 @@ export async function bootstrapAtlas(): Promise<AtlasApplication> {
       },
     },
     ...runtime.shutdownSteps,
+    {
+      // After the browser and server have stopped, so no writes are lost.
+      name: 'flush-and-close-database',
+      run: () => {
+        database.agentRuns.stop(agentRunId);
+        database.close();
+      },
+    },
     { name: 'unregister-ipc', run: unregisterIpc },
     {
       name: 'flush-logs',

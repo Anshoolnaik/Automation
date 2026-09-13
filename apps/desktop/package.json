@@ -19,6 +19,7 @@
     "@atlas/command-parser": "workspace:*",
     "@atlas/database": "workspace:*",
     "@atlas/logger": "workspace:*",
+    "@atlas/search-planner": "workspace:*",
     "playwright-core": "^1.63.0",
     "ws": "^8.21.3",
     "zod": "^4.6.2"

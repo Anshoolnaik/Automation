@@ -11,6 +11,12 @@ export const IpcChannel = {
   AgentGetStatus: 'agent:get-status',
   ExtensionGetStatus: 'extension:get-status',
   LogsSubscribe: 'logs:subscribe',
+  SearchCreateCampaign: 'search:create-campaign',
+  SearchPlanCampaign: 'search:plan-campaign',
+  SearchListCampaigns: 'search:list-campaigns',
+  SearchGetCampaign: 'search:get-campaign',
+  SearchGetProgress: 'search:get-progress',
+  SearchListJobs: 'search:list-jobs',
 } as const;
 
 export type IpcChannel = (typeof IpcChannel)[keyof typeof IpcChannel];
