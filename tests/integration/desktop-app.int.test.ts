@@ -152,5 +152,102 @@ describe.skipIf(shouldSkipBrowserTests() || !isDesktopBuilt())(
         'Task completed: Recall: still-here',
       );
     });
+
+    it('plans a search campaign, keeps it across restarts and never duplicates jobs (Phase 2)', async () => {
+      const metric = async (id: string) =>
+        Number(
+          ((await desktop!.window.getByTestId(`search-summary-${id}`).textContent()) ?? '').replace(
+            /,/g,
+            '',
+          ),
+        );
+      const openSearchTab = async () => {
+        await desktop!.window.getByRole('tab', { name: 'Search Campaigns' }).click();
+      };
+
+      let window = await start();
+      await openSearchTab();
+      await window.getByRole('button', { name: 'Create Test Campaign' }).click();
+      await expect
+        .poll(() => window.getByTestId('search-campaign-status').textContent())
+        .toBe('Draft');
+      await window.getByRole('button', { name: 'Generate Search Plan' }).click();
+      await expect
+        .poll(() => window.getByTestId('search-campaign-status').textContent(), { timeout: 30_000 })
+        .toBe('Planned');
+
+      expect(await metric('countries')).toBe(3);
+      const institutions = await metric('institutions');
+      const queries = await metric('queries');
+      const jobs = await metric('jobs');
+      expect(institutions).toBeGreaterThan(0);
+      expect(queries).toBeGreaterThan(0);
+      expect(jobs).toBe(queries); // one Scribd job per query
+      await expect
+        .poll(() => window.getByTestId('search-progress-pending').textContent())
+        .toBe(String(jobs));
+      for (const code of ['CA', 'GB', 'US']) {
+        expect(await window.getByTestId(`search-country-${code}`).count()).toBe(1);
+      }
+      const jobsTable = window.getByRole('table', { name: 'Search jobs' });
+      // The first page holds the highest-priority jobs: institution + transcript.
+      await expect
+        .poll(() =>
+          jobsTable.getByText('"University of Toronto" transcript', { exact: true }).count(),
+        )
+        .toBe(1);
+      // Page through the whole table, then look for the other query shapes.
+      const showMore = window.getByRole('button', { name: 'Show more jobs' });
+      while ((await showMore.count()) > 0) {
+        const rows = await jobsTable.locator('tbody tr').count();
+        await showMore.click();
+        await expect.poll(() => jobsTable.locator('tbody tr').count()).toBeGreaterThan(rows);
+      }
+      expect(await jobsTable.locator('tbody tr').count()).toBe(jobs);
+      for (const text of [
+        '"University of Toronto" bachelor transcript',
+        '"University of Toronto" statement of results',
+        'Canada academic transcript',
+        'Canada diploma transcript',
+      ]) {
+        expect(await jobsTable.getByText(text, { exact: true }).count()).toBe(1);
+      }
+
+      // Restart: the campaign and its plan are still there.
+      await stop();
+      window = await start();
+      await openSearchTab();
+      await expect
+        .poll(() => window.getByTestId('search-campaign-status').textContent(), { timeout: 30_000 })
+        .toBe('Planned');
+      expect(await metric('jobs')).toBe(jobs);
+
+      // Regenerating the same campaign inserts nothing new.
+      await window.getByRole('button', { name: 'Generate Search Plan' }).click();
+      await expect
+        .poll(() => window.getByTestId('search-notice').textContent(), { timeout: 30_000 })
+        .toContain('0 new jobs');
+      expect(await metric('jobs')).toBe(jobs);
+      expect(await metric('queries')).toBe(queries);
+
+      // Phase-1 agent view still works alongside.
+      await window.getByRole('tab', { name: 'Agent' }).click();
+      await expect.poll(() => statusOf('agent').textContent()).toBe('Idle');
+      await stop();
+
+      const database = openAtlasDatabase({ filePath: path.join(userData.dir, 'data', 'atlas.db') });
+      try {
+        const [campaign] = database.searchCampaigns.listCampaigns(10);
+        expect(campaign).toMatchObject({ name: 'Transcript Search Test', status: 'PLANNED' });
+        expect(database.searchJobs.countJobs(campaign!.id)).toBe(jobs);
+        expect(database.searchQueries.countQueries(campaign!.id)).toBe(queries);
+        const hashes = database.searchQueries
+          .listQueries(campaign!.id, { limit: 1_000, offset: 0 })
+          .map((query) => query.queryHash);
+        expect(new Set(hashes).size).toBe(queries);
+      } finally {
+        database.close();
+      }
+    });
   },
 );
