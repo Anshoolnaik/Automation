@@ -65,3 +65,25 @@ export {
   sha256Hex,
   type QueryIdentity,
 } from './query/normalize-query.js';
+
+// Configuration (academic transcript collection)
+export { ASSIGNMENT_COUNTRIES, findCountry, resolveCountry } from './config/countries.js';
+export {
+  EDUCATION_LEVEL_DEFINITIONS,
+  educationLevelsAtOrAbove,
+  getEducationLevelDefinition,
+} from './config/education-levels.js';
+export { ALL_TRANSCRIPT_KEYWORD_IDS, TRANSCRIPT_KEYWORDS } from './config/transcript-keywords.js';
+export {
+  ASSIGNMENT_EDUCATION_LEVELS,
+  SCRIBD_SOURCE_ID,
+  TRANSCRIPT_SEARCH_VOCABULARY,
+} from './config/vocabulary.js';
+
+// Institutions
+export {
+  INSTITUTION_FIXTURES,
+  STATIC_FIXTURE_SOURCE,
+} from './institutions/fixtures/institution-fixtures.js';
+export type { InstitutionProvider } from './institutions/institution-provider.js';
+export { StaticInstitutionProvider } from './institutions/static-institution-provider.js';
