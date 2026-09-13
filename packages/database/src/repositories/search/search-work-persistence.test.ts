@@ -189,9 +189,9 @@ describe('SearchJobRepository', () => {
   });
 
   it('guards status transitions and attempt limits in SQL', () => {
-    const [job] = [jobFor(query)];
-    db.searchJobs.insertJobs([job!]);
-    const id = job!.id;
+    const job = jobFor(query);
+    db.searchJobs.insertJobs([job]);
+    const id = job.id;
 
     expect(db.searchJobs.transitionJob(id, { from: ['RUNNING'], to: 'COMPLETED' })).toBeUndefined();
     const running = db.searchJobs.transitionJob(id, {
